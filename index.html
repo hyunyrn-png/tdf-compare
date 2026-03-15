@@ -431,17 +431,64 @@ function getFilteredProducts() {
   return products;
 }
 
+function getBestForPurpose() {
+  const vData = DATA.vintages[currentVintage];
+  const originalBest = vData.best;
+
+  if (currentPurpose === '전체') {
+    // Use original curated best
+    if (!originalBest) return null;
+    const products = vData.products;
+    const bestBase = originalBest.productName.replace(/\s*\[.*?\]\s*/g, '').trim();
+    const match = products.find(p => p.name === originalBest.productName)
+      || products.find(p => p.name.includes(bestBase) || bestBase.includes(p.name.replace(/\s*\[.*?\]\s*/g, '').replace(/\(.*?\)/g, '').trim()))
+      || products.find(p => originalBest.productName.includes(p.name.replace(/\s*\[.*?\]\s*/g, '').trim()))
+      || {};
+    return { best: originalBest, match };
+  }
+
+  // For specific purpose, auto-select best from that category
+  const purposeProducts = vData.products.filter(p => p.purpose === currentPurpose);
+  if (purposeProducts.length === 0) return null;
+
+  // Score: prioritize sharpe ratio, then 1y return, then low TER
+  const scored = purposeProducts.map(p => {
+    let score = 0;
+    if (p.sharpe != null) score += Number(p.sharpe) * 30;
+    if (p.return1y != null) score += Number(p.return1y) * 2;
+    if (p.return3y != null) score += Number(p.return3y) * 1;
+    if (p.ter != null) score -= Number(p.ter) * 10;
+    return { product: p, score };
+  }).sort((a, b) => b.score - a.score);
+
+  const top = scored[0].product;
+  const returns = [];
+  if (top.return1y != null) returns.push(`1년 ${Number(top.return1y).toFixed(2)}%`);
+  if (top.return3y != null) returns.push(`3년 ${Number(top.return3y).toFixed(2)}%`);
+  if (top.return5y != null) returns.push(`5년 ${Number(top.return5y).toFixed(2)}%`);
+
+  const autoBest = {
+    productName: top.name,
+    manager: top.manager,
+    type: top.type === 'ETF' ? 'ETF' : '펀드',
+    ter: top.ter,
+    keyReturn: returns.join(' / '),
+    reason: `${currentPurpose} 카테고리 내 ${returns.join(', ')} 수익률과 TER ${top.ter != null ? Number(top.ter).toFixed(4) + '%' : '-'} 수준으로 종합 평가 최상위 상품입니다.`
+  };
+  return { best: autoBest, match: top };
+}
+
 function renderProducts() {
   const products = getFilteredProducts();
-  const best = DATA.vintages[currentVintage].best;
   const totalPages = Math.ceil(products.length / PAGE_SIZE);
   const start = (currentPage - 1) * PAGE_SIZE;
   const pageProducts = products.slice(start, start + PAGE_SIZE);
 
   document.getElementById('product-count').textContent = `${products.length}개 상품`;
 
-  // Best card
-  renderBest(best);
+  // Best card (changes by purpose)
+  const bestInfo = getBestForPurpose();
+  renderBest(bestInfo);
 
   // Products
   const area = document.getElementById('products-area');
@@ -455,17 +502,12 @@ function renderProducts() {
   renderPagination(totalPages);
 }
 
-function renderBest(best) {
+function renderBest(bestInfo) {
   const area = document.getElementById('best-area');
-  if (!best) { area.innerHTML = ''; return; }
+  if (!bestInfo) { area.innerHTML = ''; return; }
 
-  // Find matching product for more data (partial match since best name may include class)
-  const products = DATA.vintages[currentVintage].products;
-  const bestBase = best.productName.replace(/\s*\[.*?\]\s*/g, '').trim();
-  const match = products.find(p => p.name === best.productName)
-    || products.find(p => p.name.includes(bestBase) || bestBase.includes(p.name.replace(/\s*\[.*?\]\s*/g, '').replace(/\(.*?\)/g, '').trim()))
-    || products.find(p => best.productName.includes(p.name.replace(/\s*\[.*?\]\s*/g, '').trim()))
-    || {};
+  const best = bestInfo.best;
+  const match = bestInfo.match || {};
 
   if (currentView === 'card') {
     const sim = match.simulation1m ? `100만원 투자 시 → <span style="color:var(--green);">${Number(match.simulation1m).toLocaleString()}원</span> <span style="font-size:11px; color:var(--gray-400); font-weight:400;">(1년 기준)</span>` : '';
@@ -473,7 +515,7 @@ function renderBest(best) {
       <div class="best-card" onclick="openDetail('${encodeURIComponent(JSON.stringify(match))}')">
         <div class="best-badge">
           <svg viewBox="0 0 24 24" fill="currentColor" width="14" height="14"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-          BEST 추천
+          BEST 추천${currentPurpose !== '전체' ? ` · ${currentPurpose}` : ''}
         </div>
         <div class="product-name">${match.name || best.productName}</div>
         ${match.description ? `<div class="desc-box">${match.description}</div>` : ''}
