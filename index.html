@@ -201,6 +201,39 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
 .sibling-item .sib-meta { display: flex; gap: 12px; color: var(--gray-500); font-size: 11px; }
 .sibling-item .sib-val { font-weight: 600; }
 
+/* Simulation */
+.sim-banner { background: linear-gradient(135deg, #7C3AED, #A78BFA); border-radius: var(--radius); padding: 20px; margin-bottom: 24px; cursor: pointer; color: white; display: flex; align-items: center; gap: 16px; transition: transform 0.2s, box-shadow 0.2s; }
+.sim-banner:hover { transform: translateY(-2px); box-shadow: var(--shadow-lg); }
+.sim-banner .sim-icon { width: 48px; height: 48px; background: rgba(255,255,255,0.2); border-radius: 12px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.sim-banner .sim-text h3 { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+.sim-banner .sim-text p { font-size: 13px; opacity: 0.85; }
+
+.sim-form { background: white; border-radius: var(--radius); padding: 24px; box-shadow: var(--shadow); margin-bottom: 20px; }
+.sim-form .form-group { margin-bottom: 20px; }
+.sim-form .form-label { font-size: 14px; font-weight: 600; color: var(--gray-700); margin-bottom: 8px; display: block; }
+.sim-form .form-hint { font-size: 12px; color: var(--gray-400); margin-top: 4px; }
+.sim-form input[type="number"] { width: 100%; padding: 12px 16px; border: 1px solid var(--gray-300); border-radius: 8px; font-size: 16px; outline: none; transition: border 0.2s; }
+.sim-form input[type="number"]:focus { border-color: var(--primary); }
+.sim-method-toggle { display: flex; gap: 0; border: 1px solid var(--gray-300); border-radius: 8px; overflow: hidden; }
+.sim-method-btn { flex: 1; padding: 12px; text-align: center; font-size: 14px; font-weight: 600; cursor: pointer; background: white; border: none; color: var(--gray-600); transition: all 0.2s; }
+.sim-method-btn.active { background: var(--primary); color: white; }
+.sim-period-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.sim-period-btn { padding: 10px 18px; border-radius: 8px; border: 1px solid var(--gray-300); background: white; font-size: 14px; font-weight: 500; cursor: pointer; transition: all 0.2s; }
+.sim-period-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+.sim-calculate-btn { width: 100%; padding: 14px; background: linear-gradient(135deg, #7C3AED, #A78BFA); color: white; border: none; border-radius: 10px; font-size: 16px; font-weight: 700; cursor: pointer; transition: opacity 0.2s; }
+.sim-calculate-btn:hover { opacity: 0.9; }
+.sim-calculate-btn:disabled { opacity: 0.5; cursor: default; }
+
+.sim-result-card { background: white; border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); border: 1px solid var(--gray-200); margin-bottom: 12px; cursor: pointer; transition: all 0.2s; }
+.sim-result-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+.sim-result-card .sim-rank { width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 700; flex-shrink: 0; }
+.sim-rank-1 { background: #FEF3C7; color: #D97706; }
+.sim-rank-2 { background: #F3F4F6; color: #6B7280; }
+.sim-rank-3 { background: #FDE8D8; color: #C2410C; }
+.sim-result-summary { background: linear-gradient(135deg, #EDE9FE, #DDD6FE); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; }
+.sim-result-summary .big-val { font-size: 28px; font-weight: 700; color: #7C3AED; }
+.sim-result-summary .sub-val { font-size: 14px; color: var(--gray-600); margin-top: 4px; }
+
 /* Page transitions */
 .page { display: none; padding-bottom: 70px; }
 .page.active { display: block; }
@@ -224,6 +257,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
       <div class="section-title">은퇴 목표 시점을 선택하세요</div>
       <div class="section-subtitle">빈티지는 은퇴 예상 시점을 의미합니다. 예: 2030년에 은퇴 예정이면 TDF2030 선택</div>
       <div id="vintage-grid" class="vintage-grid"></div>
+      <div class="sim-banner" onclick="showSimulation()">
+        <div class="sim-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" width="28" height="28"><path d="M12 2v20M2 12h20"/><circle cx="12" cy="12" r="10"/><path d="M8 16l4-8 4 8"/></svg>
+        </div>
+        <div class="sim-text">
+          <h3>투자 시뮬레이션</h3>
+          <p>투자금액과 기간을 입력하면 예상 수익을 계산해드려요</p>
+        </div>
+      </div>
+
       <div class="info-box">
         <h3>TDF란?</h3>
         <p>TDF(Target Date Fund)는 은퇴 목표 시점에 맞춰 자산배분을 자동으로 조정하는 펀드입니다. 젊을 때는 주식 비중이 높고, 은퇴 시점이 가까워질수록 채권 비중이 높아집니다.</p>
@@ -285,6 +328,51 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   </div>
 </div>
 
+<!-- ============ PAGE: SIMULATION ============ -->
+<div id="page-sim" class="page">
+  <div class="header" style="background: linear-gradient(135deg, #5B21B6, #7C3AED);">
+    <div class="container">
+      <button class="back-btn" onclick="showMain()">
+        <svg width="20" height="20" fill="none" stroke="white" stroke-width="2"><path d="M15 18l-7-7 7-7"/></svg>
+        뒤로
+      </button>
+      <h1>투자 시뮬레이션</h1>
+      <p>퇴직연금 TDF 상품 기준 예상 수익을 확인하세요</p>
+    </div>
+  </div>
+  <div class="section">
+    <div class="container">
+      <div class="sim-form">
+        <div class="form-group">
+          <label class="form-label">투자 금액 (만원)</label>
+          <input type="number" id="sim-amount" placeholder="예: 1000" min="1" value="1000">
+          <div class="form-hint">만원 단위로 입력하세요</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">투자 방법</label>
+          <div class="sim-method-toggle">
+            <button class="sim-method-btn active" onclick="setSimMethod('lump')" id="sim-lump">한번에 투자</button>
+            <button class="sim-method-btn" onclick="setSimMethod('dca')" id="sim-dca">매월 적립식</button>
+          </div>
+          <div class="form-hint" id="sim-method-hint">입력한 금액을 한번에 투자합니다</div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">투자 기간</label>
+          <div class="sim-period-btns">
+            <button class="sim-period-btn" onclick="setSimPeriod(1)">1년</button>
+            <button class="sim-period-btn active" onclick="setSimPeriod(3)">3년</button>
+            <button class="sim-period-btn" onclick="setSimPeriod(5)">5년</button>
+            <button class="sim-period-btn" onclick="setSimPeriod(10)">10년</button>
+            <button class="sim-period-btn" onclick="setSimPeriod(20)">20년</button>
+          </div>
+        </div>
+        <button class="sim-calculate-btn" onclick="runSimulation()">시뮬레이션 실행</button>
+      </div>
+      <div id="sim-results"></div>
+    </div>
+  </div>
+</div>
+
 <!-- ============ MODAL: PRODUCT DETAIL ============ -->
 <div id="modal-overlay" class="modal-overlay" onclick="closeModal(event)">
   <div class="modal" onclick="event.stopPropagation()">
@@ -298,6 +386,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; b
   <button class="nav-item active" id="nav-home" onclick="showMain()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     <span>홈</span>
+  </button>
+  <button class="nav-item" id="nav-sim" onclick="showSimulation()">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M8 16l4-8 4 8"/><path d="M12 2v20"/></svg>
+    <span>시뮬레이션</span>
   </button>
   <button class="nav-item" id="nav-stats" onclick="showStats()">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
@@ -875,6 +967,190 @@ function toggleSiblings(id, btn) {
   const el = document.getElementById(id);
   el.classList.toggle('show');
   btn.classList.toggle('open');
+}
+
+// ======== Simulation ========
+let simMethod = 'lump';
+let simPeriod = 3;
+
+function showSimulation() {
+  showPage('page-sim');
+  setNavActive('nav-sim');
+}
+
+function setSimMethod(m) {
+  simMethod = m;
+  document.getElementById('sim-lump').classList.toggle('active', m === 'lump');
+  document.getElementById('sim-dca').classList.toggle('active', m === 'dca');
+  document.getElementById('sim-method-hint').textContent = m === 'lump' ? '입력한 금액을 한번에 투자합니다' : '입력한 금액을 매월 투자합니다';
+}
+
+function setSimPeriod(y) {
+  simPeriod = y;
+  document.querySelectorAll('.sim-period-btn').forEach(b => b.classList.remove('active'));
+  event.target.classList.add('active');
+}
+
+function getAnnualReturn(product, years) {
+  // Use the closest available return data and annualize
+  if (years <= 1 && product.return1y != null) return Number(product.return1y);
+  if (years <= 3 && product.return3y != null) {
+    // return3y is cumulative 3-year return, annualize it
+    const cum = Number(product.return3y) / 100;
+    return (Math.pow(1 + cum, 1/3) - 1) * 100;
+  }
+  if (product.return5y != null) {
+    const cum = Number(product.return5y) / 100;
+    return (Math.pow(1 + cum, 1/5) - 1) * 100;
+  }
+  if (product.return3y != null) {
+    const cum = Number(product.return3y) / 100;
+    return (Math.pow(1 + cum, 1/3) - 1) * 100;
+  }
+  if (product.return1y != null) return Number(product.return1y);
+  return null;
+}
+
+function runSimulation() {
+  if (!DATA) return;
+  const amountRaw = document.getElementById('sim-amount').value;
+  const amount = parseInt(amountRaw);
+  if (!amount || amount <= 0) {
+    alert('투자 금액을 입력해주세요.');
+    return;
+  }
+
+  const amountWon = amount * 10000; // 만원 → 원
+  const years = simPeriod;
+
+  // Collect all 퇴직연금 products + ETFs across all vintages
+  const candidates = [];
+  for (const [vintage, vData] of Object.entries(DATA.vintages)) {
+    for (const p of vData.products) {
+      if (p.purpose !== '퇴직연금' && p.type !== 'ETF') continue;
+      const annualRet = getAnnualReturn(p, years);
+      if (annualRet === null) continue;
+
+      let finalAmount, totalInvested, profit;
+      const r = annualRet / 100;
+
+      if (simMethod === 'lump') {
+        totalInvested = amountWon;
+        finalAmount = amountWon * Math.pow(1 + r, years);
+        profit = finalAmount - totalInvested;
+      } else {
+        // DCA: monthly contributions
+        const monthlyAmount = amountWon;
+        const monthlyR = Math.pow(1 + r, 1/12) - 1;
+        const months = years * 12;
+        totalInvested = monthlyAmount * months;
+        finalAmount = monthlyAmount * (Math.pow(1 + monthlyR, months) - 1) / monthlyR * (1 + monthlyR);
+        profit = finalAmount - totalInvested;
+      }
+
+      candidates.push({
+        product: p,
+        vintage,
+        annualReturn: annualRet,
+        finalAmount: Math.round(finalAmount),
+        totalInvested: Math.round(totalInvested),
+        profit: Math.round(profit),
+        profitRate: ((finalAmount / totalInvested - 1) * 100)
+      });
+    }
+  }
+
+  // Sort by profit descending, take top 10
+  candidates.sort((a, b) => b.profit - a.profit);
+
+  // Deduplicate by fund name (keep best performing class)
+  const seen = new Set();
+  const top10 = [];
+  for (const c of candidates) {
+    if (seen.has(c.product.name)) continue;
+    seen.add(c.product.name);
+    top10.push(c);
+    if (top10.length >= 10) break;
+  }
+
+  renderSimResults(top10, amount, years);
+}
+
+function renderSimResults(results, amount, years) {
+  const area = document.getElementById('sim-results');
+  if (results.length === 0) {
+    area.innerHTML = '<div class="loading">조건에 맞는 상품이 없습니다.</div>';
+    return;
+  }
+
+  const methodLabel = simMethod === 'lump' ? '일시 투자' : '매월 적립';
+  const best = results[0];
+
+  area.innerHTML = `
+    <div class="sim-result-summary">
+      <div style="font-size:13px; color:var(--gray-600); margin-bottom:8px;">
+        ${simMethod === 'lump' ? `${amount.toLocaleString()}만원 ${methodLabel}` : `매월 ${amount.toLocaleString()}만원 × ${years}년`} 기준 최고 예상 수익
+      </div>
+      <div class="big-val">${formatWon(best.finalAmount)}</div>
+      <div class="sub-val">
+        투자원금 ${formatWon(best.totalInvested)} → 수익금 <span style="color:var(--green); font-weight:700;">+${formatWon(best.profit)}</span> (${best.profitRate.toFixed(1)}%)
+      </div>
+    </div>
+
+    <div style="font-size:16px; font-weight:700; margin-bottom:4px;">추천 상품 TOP 10</div>
+    <div style="font-size:13px; color:var(--gray-500); margin-bottom:16px;">퇴직연금 기준 · 빈티지 통합 · 연환산 수익률 기반</div>
+
+    ${results.map((r, i) => {
+      const p = r.product;
+      const rankClass = i === 0 ? 'sim-rank-1' : (i === 1 ? 'sim-rank-2' : (i === 2 ? 'sim-rank-3' : ''));
+      const typeClass = p.type === 'ETF' ? 'type-etf' : 'type-fund';
+      return `
+        <div class="sim-result-card" onclick="openDetail('${encodeURIComponent(JSON.stringify(p))}')">
+          <div style="display:flex; align-items:flex-start; gap:12px;">
+            <div class="sim-rank ${rankClass}" style="${i > 2 ? 'background:var(--gray-100); color:var(--gray-500);' : ''}">${i + 1}</div>
+            <div style="flex:1; min-width:0;">
+              <div style="display:flex; gap:6px; align-items:center; margin-bottom:4px;">
+                <span class="product-type ${typeClass}" style="font-size:10px;">${p.type}</span>
+                <span style="font-size:11px; color:var(--gray-400);">TDF${r.vintage}</span>
+              </div>
+              <div style="font-size:14px; font-weight:600; margin-bottom:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${p.name}</div>
+              <div style="font-size:12px; color:var(--gray-500);">${p.manager} · ${p.class}</div>
+            </div>
+          </div>
+          <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:12px; padding-top:12px; border-top:1px solid var(--gray-100);">
+            <div>
+              <div style="font-size:11px; color:var(--gray-400);">예상 금액</div>
+              <div style="font-size:15px; font-weight:700; color:#7C3AED;">${formatWon(r.finalAmount)}</div>
+            </div>
+            <div>
+              <div style="font-size:11px; color:var(--gray-400);">예상 수익</div>
+              <div style="font-size:15px; font-weight:700; color:var(--green);">+${formatWon(r.profit)}</div>
+            </div>
+            <div>
+              <div style="font-size:11px; color:var(--gray-400);">연수익률</div>
+              <div style="font-size:15px; font-weight:700; color:var(--green);">${r.annualReturn.toFixed(2)}%</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:12px; margin-top:8px; font-size:11px; color:var(--gray-400);">
+            <span>TER ${fmtFee(p.ter)}</span>
+            ${p.sharpe != null ? `<span>샤프 ${p.sharpe}</span>` : ''}
+            ${p.mdd != null ? `<span>MDD ${fmtPct(p.mdd)}</span>` : ''}
+          </div>
+        </div>`;
+    }).join('')}
+
+    <div style="background:var(--gray-50); border-radius:8px; padding:14px; margin-top:16px; font-size:12px; color:var(--gray-500); line-height:1.6;">
+      * 과거 수익률 기반 시뮬레이션이며 미래 수익을 보장하지 않습니다.<br>
+      * 수수료(TER)는 이미 수익률에 반영된 수치입니다.<br>
+      * 적립식은 매월 초 동일 금액 투자를 가정합니다.
+    </div>
+  `;
+}
+
+function formatWon(v) {
+  if (v >= 100000000) return (v / 100000000).toFixed(2) + '억원';
+  if (v >= 10000) return (v / 10000).toFixed(0) + '만원';
+  return v.toLocaleString() + '원';
 }
 
 // Keyboard
