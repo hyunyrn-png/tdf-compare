@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TDF 비교 서비스 - 디자인 시안</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --primary: #2563EB;
+    --primary-light: #EFF6FF;
+    --primary-dark: #1D4ED8;
+    --gold: #F59E0B;
+    --gold-light: #FFFBEB;
+    --green: #10B981;
+    --red: #EF4444;
+    --gray-50: #F9FAFB;
+    --gray-100: #F3F4F6;
+    --gray-200: #E5E7EB;
+    --gray-300: #D1D5DB;
+    --gray-400: #9CA3AF;
+    --gray-500: #6B7280;
+    --gray-600: #4B5563;
+    --gray-700: #374151;
+    --gray-800: #1F2937;
+    --gray-900: #111827;
+    --radius: 12px;
+    --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+    --shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1), 0 2px 4px -1px rgba(0,0,0,0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--gray-50); color: var(--gray-800); line-height: 1.6; }
+
+  /* Page Navigation */
+  .page-nav { position: fixed; top: 0; left: 0; right: 0; z-index: 100; background: white; border-bottom: 1px solid var(--gray-200); padding: 12px 20px; display: flex; gap: 8px; overflow-x: auto; }
+  .page-nav button { padding: 8px 16px; border-radius: 20px; border: 1px solid var(--gray-300); background: white; cursor: pointer; font-size: 13px; white-space: nowrap; font-weight: 500; color: var(--gray-600); transition: all 0.2s; }
+  .page-nav button.active { background: var(--primary); color: white; border-color: var(--primary); }
+  .page-nav button:hover:not(.active) { background: var(--gray-100); }
+
+  .page { display: none; padding-top: 70px; }
+  .page.active { display: block; }
+
+  /* Design Label */
+  .design-label { position: fixed; bottom: 20px; right: 20px; background: var(--primary); color: white; padding: 10px 20px; border-radius: 30px; font-size: 13px; font-weight: 600; z-index: 200; box-shadow: var(--shadow-lg); }
+
+  /* Header */
+  .header { background: linear-gradient(135deg, #1E40AF, #3B82F6); color: white; padding: 32px 20px 24px; }
+  .header h1 { font-size: 24px; font-weight: 700; margin-bottom: 4px; }
+  .header p { font-size: 14px; opacity: 0.85; }
+
+  /* Container */
+  .container { max-width: 1200px; margin: 0 auto; padding: 0 16px; }
+
+  /* Section */
+  .section { padding: 24px 16px; }
+  .section-title { font-size: 18px; font-weight: 700; margin-bottom: 16px; color: var(--gray-800); }
+  .section-subtitle { font-size: 13px; color: var(--gray-500); margin-bottom: 16px; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; background: var(--gray-100); padding: 4px; border-radius: 10px; margin-bottom: 20px; overflow-x: auto; }
+  .tab { flex: 1; padding: 10px 12px; text-align: center; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; background: transparent; color: var(--gray-500); white-space: nowrap; min-width: fit-content; transition: all 0.2s; }
+  .tab.active { background: white; color: var(--primary); box-shadow: var(--shadow); }
+
+  /* Purpose Filter */
+  .purpose-filter { display: flex; gap: 8px; margin-bottom: 16px; flex-wrap: wrap; }
+  .purpose-btn { padding: 8px 16px; border-radius: 20px; border: 1px solid var(--gray-300); background: white; font-size: 13px; cursor: pointer; font-weight: 500; transition: all 0.2s; }
+  .purpose-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+  .purpose-btn .count { font-size: 11px; opacity: 0.7; margin-left: 4px; }
+
+  /* View Toggle */
+  .view-toggle { display: flex; gap: 4px; margin-bottom: 16px; }
+  .view-btn { padding: 6px 12px; border: 1px solid var(--gray-300); background: white; border-radius: 6px; cursor: pointer; font-size: 12px; }
+  .view-btn.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+  /* Best Card */
+  .best-card { background: linear-gradient(135deg, #FFFBEB, #FEF3C7); border: 2px solid var(--gold); border-radius: var(--radius); padding: 20px; margin-bottom: 20px; position: relative; overflow: hidden; }
+  .best-badge { display: inline-flex; align-items: center; gap: 4px; background: var(--gold); color: white; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; margin-bottom: 12px; }
+  .best-badge svg { width: 14px; height: 14px; }
+  .best-card .product-name { font-size: 16px; font-weight: 700; color: var(--gray-900); margin-bottom: 4px; }
+  .best-card .product-company { font-size: 13px; color: var(--gray-500); margin-bottom: 12px; }
+  .best-card .reason { background: white; border-radius: 8px; padding: 12px; font-size: 13px; color: var(--gray-600); line-height: 1.5; margin-bottom: 16px; border-left: 3px solid var(--gold); }
+  .best-card .reason-label { font-size: 11px; font-weight: 700; color: var(--gold); text-transform: uppercase; margin-bottom: 4px; }
+  .best-metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+  .best-metric { background: white; border-radius: 8px; padding: 10px; text-align: center; }
+  .best-metric .label { font-size: 11px; color: var(--gray-500); }
+  .best-metric .value { font-size: 16px; font-weight: 700; color: var(--primary); }
+  .best-metric .value.positive { color: var(--green); }
+  .best-metric .value.negative { color: var(--red); }
+
+  /* Product Card */
+  .product-grid { display: grid; grid-template-columns: 1fr; gap: 12px; }
+  .product-card { background: white; border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow); border: 1px solid var(--gray-200); transition: all 0.2s; cursor: pointer; }
+  .product-card:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+  .product-card .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+  .product-card .product-type { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; }
+  .type-fund { background: #EDE9FE; color: #7C3AED; }
+  .type-etf { background: #DCFCE7; color: #16A34A; }
+  .product-card .product-name { font-size: 14px; font-weight: 600; color: var(--gray-800); margin-bottom: 2px; line-height: 1.4; }
+  .product-card .product-company { font-size: 12px; color: var(--gray-500); }
+  .product-card .product-class { font-size: 11px; color: var(--gray-400); margin-top: 2px; }
+  .card-metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--gray-100); }
+  .card-metric .label { font-size: 11px; color: var(--gray-400); }
+  .card-metric .value { font-size: 14px; font-weight: 600; }
+  .card-metric .value.positive { color: var(--green); }
+  .card-metric .sub { font-size: 10px; color: var(--gray-400); }
+  .rank-badge { width: 24px; height: 24px; border-radius: 50%; background: var(--gray-100); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: var(--gray-500); flex-shrink: 0; }
+
+  /* Product List View */
+  .product-list { display: flex; flex-direction: column; gap: 2px; }
+  .list-item { background: white; padding: 14px 16px; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid var(--gray-100); cursor: pointer; transition: background 0.2s; }
+  .list-item:hover { background: var(--gray-50); }
+  .list-item:first-child { border-radius: var(--radius) var(--radius) 0 0; }
+  .list-item:last-child { border-radius: 0 0 var(--radius) var(--radius); border-bottom: none; }
+  .list-info { flex: 1; min-width: 0; }
+  .list-info .name { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .list-info .company { font-size: 11px; color: var(--gray-400); }
+  .list-returns { text-align: right; flex-shrink: 0; }
+  .list-returns .value { font-size: 14px; font-weight: 700; color: var(--green); }
+  .list-returns .label { font-size: 10px; color: var(--gray-400); }
+
+  /* Detail Modal */
+  .modal-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 300; align-items: flex-end; justify-content: center; }
+  .modal-overlay.show { display: flex; }
+  .modal { background: white; border-radius: 20px 20px 0 0; width: 100%; max-width: 600px; max-height: 85vh; overflow-y: auto; padding: 24px 20px 40px; }
+  .modal-handle { width: 40px; height: 4px; background: var(--gray-300); border-radius: 2px; margin: 0 auto 20px; }
+  .modal .product-name { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+  .modal .product-company { font-size: 14px; color: var(--gray-500); margin-bottom: 20px; }
+  .detail-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin-bottom: 20px; }
+  .detail-item { background: var(--gray-50); border-radius: 8px; padding: 12px; }
+  .detail-item .label { font-size: 11px; color: var(--gray-500); margin-bottom: 4px; }
+  .detail-item .value { font-size: 18px; font-weight: 700; }
+
+  /* Stats Page */
+  .stat-card { background: white; border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow); margin-bottom: 16px; }
+  .stat-card h3 { font-size: 14px; color: var(--gray-500); margin-bottom: 8px; }
+  .stat-card .big-number { font-size: 32px; font-weight: 700; color: var(--gray-900); }
+  .stat-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 20px; }
+  .bar-chart { display: flex; flex-direction: column; gap: 8px; }
+  .bar-row { display: flex; align-items: center; gap: 8px; }
+  .bar-label { width: 70px; font-size: 12px; color: var(--gray-600); flex-shrink: 0; }
+  .bar-track { flex: 1; height: 24px; background: var(--gray-100); border-radius: 4px; overflow: hidden; position: relative; }
+  .bar-fill { height: 100%; border-radius: 4px; display: flex; align-items: center; padding-left: 8px; font-size: 11px; color: white; font-weight: 600; }
+  .bar-fill.blue { background: var(--primary); }
+  .bar-fill.green { background: var(--green); }
+  .bar-fill.gold { background: var(--gold); }
+  .bar-value { font-size: 12px; color: var(--gray-500); width: 50px; text-align: right; flex-shrink: 0; }
+
+  /* Pie chart (simple CSS) */
+  .donut-chart { width: 160px; height: 160px; border-radius: 50%; background: conic-gradient(var(--primary) 0% 45%, #60A5FA 45% 72%, var(--gold) 72% 100%); position: relative; margin: 0 auto 16px; }
+  .donut-chart::after { content: ''; position: absolute; top: 35px; left: 35px; right: 35px; bottom: 35px; background: white; border-radius: 50%; }
+  .donut-legend { display: flex; justify-content: center; gap: 16px; font-size: 12px; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+
+  /* Table */
+  .stat-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .stat-table th { text-align: left; padding: 10px 12px; background: var(--gray-50); color: var(--gray-500); font-weight: 600; font-size: 12px; border-bottom: 1px solid var(--gray-200); }
+  .stat-table td { padding: 10px 12px; border-bottom: 1px solid var(--gray-100); }
+  .stat-table tr:hover td { background: var(--gray-50); }
+  .trend-up { color: var(--green); }
+  .trend-down { color: var(--red); }
+
+  /* Bottom Nav */
+  .bottom-nav { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1px solid var(--gray-200); display: flex; padding: 8px 0; padding-bottom: max(8px, env(safe-area-inset-bottom)); z-index: 100; }
+  .nav-item { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 4px; cursor: pointer; color: var(--gray-400); font-size: 10px; font-weight: 500; }
+  .nav-item.active { color: var(--primary); }
+  .nav-item svg { width: 22px; height: 22px; }
+
+  /* PC Layout */
+  @media (min-width: 768px) {
+    .page-nav { padding: 12px 40px; }
+    .header { padding: 40px; }
+    .header h1 { font-size: 28px; }
+    .section { padding: 32px 40px; }
+    .container { padding: 0 40px; }
+    .best-metrics { grid-template-columns: repeat(6, 1fr); }
+    .product-grid { grid-template-columns: repeat(2, 1fr); }
+    .detail-grid { grid-template-columns: repeat(3, 1fr); }
+    .stat-row { grid-template-columns: repeat(3, 1fr); }
+    .modal { border-radius: 20px; max-width: 640px; margin-bottom: 60px; }
+    .modal-overlay { align-items: center; }
+  }
+  @media (min-width: 1024px) {
+    .product-grid { grid-template-columns: repeat(3, 1fr); }
+    .best-metrics { grid-template-columns: repeat(6, 1fr); }
+  }
+
+  /* Vintage Scroll */
+  .vintage-scroll { display: flex; gap: 6px; overflow-x: auto; padding-bottom: 8px; margin-bottom: 16px; -webkit-overflow-scrolling: touch; }
+  .vintage-scroll::-webkit-scrollbar { display: none; }
+  .vintage-chip { padding: 8px 16px; border-radius: 20px; border: 1px solid var(--gray-300); background: white; font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+  .vintage-chip.active { background: var(--primary); color: white; border-color: var(--primary); }
+
+  /* Sort */
+  .sort-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .sort-bar .count { font-size: 13px; color: var(--gray-500); }
+  .sort-select { padding: 6px 12px; border: 1px solid var(--gray-300); border-radius: 6px; font-size: 12px; background: white; }
+
+  /* Annotation */
+  .annotation { position: absolute; background: #FF6B6B; color: white; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: 600; z-index: 10; white-space: nowrap; }
+  .annotation::after { content: ''; position: absolute; border: 5px solid transparent; }
+  .annotation.left::after { right: -10px; top: 50%; transform: translateY(-50%); border-left-color: #FF6B6B; }
+  .annotation.bottom::after { top: -10px; left: 50%; transform: translateX(-50%); border-bottom-color: #FF6B6B; }
+  .annotation.top::after { bottom: -10px; left: 50%; transform: translateX(-50%); border-top-color: #FF6B6B; }
+
+  .page-title { font-size: 22px; font-weight: 700; padding: 24px 16px 8px; color: var(--gray-800); }
+  .page-desc { font-size: 14px; color: var(--gray-500); padding: 0 16px 16px; }
+
+  /* Screen label */
+  .screen-label { background: var(--primary-dark); color: white; text-align: center; padding: 8px; font-size: 13px; font-weight: 600; letter-spacing: 1px; }
+
+  /* Tooltip */
+  .tooltip-wrap { position: relative; }
+  .tooltip-icon { display: inline-flex; align-items: center; justify-content: center; width: 16px; height: 16px; border-radius: 50%; background: var(--gray-200); color: var(--gray-500); font-size: 10px; font-weight: 700; cursor: help; margin-left: 4px; vertical-align: middle; flex-shrink: 0; }
+  .tooltip-content { display: none; position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%); background: var(--gray-800); color: white; padding: 10px 14px; border-radius: 8px; font-size: 12px; line-height: 1.5; width: 240px; z-index: 50; box-shadow: var(--shadow-lg); font-weight: 400; }
+  .tooltip-content::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 6px solid transparent; border-top-color: var(--gray-800); }
+  .tooltip-wrap:hover .tooltip-content, .tooltip-wrap:focus-within .tooltip-content { display: block; }
+  .detail-item .label { display: flex; align-items: center; }
+</style>
+</head>
+<body>
+
+<!-- Page Navigation (for demo) -->
+<div class="page-nav">
+  <button class="active" onclick="showPage('main')">메인 (빈티지 선택)</button>
+  <button onclick="showPage('vintage')">빈티지 상세 (카드)</button>
+  <button onclick="showPage('vintage-list')">빈티지 상세 (리스트)</button>
+  <button onclick="showPage('detail')">상품 상세</button>
+  <button onclick="showPage('stats')">통계 대시보드</button>
+  <button onclick="showPage('mobile')">모바일 미리보기</button>
+</div>
+
+<div class="design-label">디자인 시안 v1.0</div>
+
+<!-- ==================== PAGE 1: MAIN ==================== -->
+<div id="main" class="page active">
+  <div class="screen-label">SCREEN 1 — 메인 화면 (빈티지 선택)</div>
+  <div class="header">
+    <div class="container">
+      <h1>TDF 비교</h1>
+      <p>나에게 맞는 TDF 상품을 찾아보세요</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="container">
+      <div class="section-title">은퇴 목표 시점을 선택하세요</div>
+      <div class="section-subtitle">빈티지는 은퇴 예상 시점을 의미합니다. 예: 2030년에 은퇴 예정이면 TDF2030 선택</div>
+
+      <div style="display:grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; margin-bottom: 32px;">
+        <div style="background:white; border-radius:var(--radius); padding:20px; text-align:center; box-shadow:var(--shadow); border:2px solid transparent; cursor:pointer; transition: all 0.2s;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='transparent'">
+          <div style="font-size:24px; font-weight:700; color:var(--primary);">2015</div>
+          <div style="font-size:12px; color:var(--gray-500); margin-top:4px;">12개 상품</div>
+        </div>
+        <div style="background:white; border-radius:var(--radius); padding:20px; text-align:center; box-shadow:var(--shadow); border:2px solid transparent; cursor:pointer;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='transparent'">
+          <div style="font-size:24px; font-weight:700; color:var(--primary);">2020</div>
+          <div style="font-size:12px; color:var(--gray-500); margin-top:4px;">46개 상품</div>
+        </div>
+        <div style="background:white; border-radius:var(--radius); padding:20px; text-align:center; box-shadow:var(--shadow); border:2px solid transparent; cursor:pointer;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='transparent'">
+          <div style="font-size:24px; font-weight:700; color:var(--primary);">2025</div>
+          <div style="font-size:12px; color:var(--gray-500); margin-top:4px;">123개 상품</div>
+        </div>
+        <div style="background:white; border-radius:var(--radius); padding:20px; text-align:center; box-shadow:var(--shadow); border:2px solid var(--primary); cursor:pointer; position:relative;">
+          <div style="font-size:24px; font-weight:700; color:var(--primary);">2030</div>
+          <div style="font-size:12px; color:var(--gray-500); margin-top:4px;">245개 상품</div>
+        </div>
+        <div style="background:white; border-radius:var(--radius); padding:20px; text-align:center; box-shadow:var(--shadow); border:2px solid transparent; cursor:pointer;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='transparent'">
+          <div style="font-size:24px; font-weight:700; color:var(--primary);">2035</div>
+          <div style="font-size:12px; color:var(--gray-500); margin-top:4px;">192개 상품</div>
+        </div>
+        <div style="background:white; border-radius:var(--radius); padding:20px; text-align:center; box-shadow:var(--shadow); border:2px solid transparent; cursor:pointer;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='transparent'">
+          <div style="font-size:24px; font-weight:700; color:var(--primary);">2040</div>
+          <div style="font-size:12px; color:var(--gray-500); margin-top:4px;">255개 상품</div>
+        </div>
+        <div style="background:white; border-radius:var(--radius); padding:20px; text-align:center; box-shadow:var(--shadow); border:2px solid transparent; cursor:pointer;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='transparent'">
+          <div style="font-size:24px; font-weight:700; color:var(--primary);">2045</div>
+          <div style="font-size:12px; color:var(--gray-500); margin-top:4px;">186개 상품</div>
+        </div>
+        <div style="background:white; border-radius:var(--radius); padding:20px; text-align:center; box-shadow:var(--shadow); border:2px solid transparent; cursor:pointer;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='transparent'">
+          <div style="font-size:24px; font-weight:700; color:var(--primary);">2050</div>
+          <div style="font-size:12px; color:var(--gray-500); margin-top:4px;">256개 상품</div>
+        </div>
+        <div style="background:white; border-radius:var(--radius); padding:20px; text-align:center; box-shadow:var(--shadow); border:2px solid transparent; cursor:pointer;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='transparent'">
+          <div style="font-size:24px; font-weight:700; color:var(--primary);">2055</div>
+          <div style="font-size:12px; color:var(--gray-500); margin-top:4px;">142개 상품</div>
+        </div>
+        <div style="background:white; border-radius:var(--radius); padding:20px; text-align:center; box-shadow:var(--shadow); border:2px solid transparent; cursor:pointer;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='transparent'">
+          <div style="font-size:24px; font-weight:700; color:var(--primary);">2060</div>
+          <div style="font-size:12px; color:var(--gray-500); margin-top:4px;">150개 상품</div>
+        </div>
+        <div style="background:white; border-radius:var(--radius); padding:20px; text-align:center; box-shadow:var(--shadow); border:2px solid transparent; cursor:pointer;" onmouseover="this.style.borderColor='var(--primary)'" onmouseout="this.style.borderColor='transparent'">
+          <div style="font-size:24px; font-weight:700; color:var(--primary);">2065</div>
+          <div style="font-size:12px; color:var(--gray-500); margin-top:4px;">19개 상품</div>
+        </div>
+      </div>
+
+      <div style="background:white; border-radius:var(--radius); padding:20px; box-shadow:var(--shadow);">
+        <div class="section-title" style="font-size:15px;">TDF란?</div>
+        <p style="font-size:13px; color:var(--gray-600);">TDF(Target Date Fund)는 은퇴 목표 시점에 맞춰 자산배분을 자동으로 조정하는 펀드입니다. 젊을 때는 주식 비중이 높고, 은퇴 시점이 가까워질수록 채권 비중이 높아집니다.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE 2: VINTAGE DETAIL (Card View) ==================== -->
+<div id="vintage" class="page">
+  <div class="screen-label">SCREEN 2 — 빈티지 상세 (카드 뷰)</div>
+  <div class="header" style="padding-bottom:16px;">
+    <div class="container">
+      <div style="display:flex; align-items:center; gap:8px; margin-bottom:12px;">
+        <svg width="20" height="20" fill="none" stroke="white" stroke-width="2"><path d="M15 18l-7-7 7-7"/></svg>
+        <span style="font-size:14px; opacity:0.8;">뒤로</span>
+      </div>
+      <h1>TDF 2030</h1>
+      <p>은퇴 목표: 2030년 | 총 245개 상품</p>
+    </div>
+  </div>
+
+  <div class="section" style="padding-top:16px;">
+    <div class="container">
+      <!-- Vintage Scroll -->
+      <div class="vintage-scroll">
+        <div class="vintage-chip">2015</div>
+        <div class="vintage-chip">2020</div>
+        <div class="vintage-chip">2025</div>
+        <div class="vintage-chip active">2030</div>
+        <div class="vintage-chip">2035</div>
+        <div class="vintage-chip">2040</div>
+        <div class="vintage-chip">2045</div>
+        <div class="vintage-chip">2050</div>
+        <div class="vintage-chip">2055</div>
+        <div class="vintage-chip">2060</div>
+        <div class="vintage-chip">2065</div>
+      </div>
+
+      <!-- Purpose Filter -->
+      <div class="purpose-filter">
+        <button class="purpose-btn active">전체<span class="count">245</span></button>
+        <button class="purpose-btn">일반<span class="count">82</span></button>
+        <button class="purpose-btn">연금저축<span class="count">78</span></button>
+        <button class="purpose-btn">퇴직연금<span class="count">85</span></button>
+      </div>
+
+      <!-- View Toggle + Sort -->
+      <div class="sort-bar">
+        <div class="count">245개 상품</div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <select class="sort-select">
+            <option>1년 수익률순</option>
+            <option>3년 수익률순</option>
+            <option>5년 수익률순</option>
+            <option>보수 낮은순</option>
+            <option>샤프비율순</option>
+            <option>MDD 낮은순</option>
+          </select>
+          <div class="view-toggle">
+            <button class="view-btn active">카드</button>
+            <button class="view-btn">리스트</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- BEST Card -->
+      <div class="best-card">
+        <div class="best-badge">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+          BEST 추천
+        </div>
+        <div class="product-name">NH-Amundi하나로TDF2030증권투자신탁[주식혼합-재간접형]</div>
+
+        <div style="font-size:13px; color:var(--gray-600); margin-bottom:4px; line-height:1.5; background:white; border-radius:6px; padding:8px 10px;">시장 변화에 빠르게 대응하는 전술적 자산배분형 TDF입니다.</div>
+        <div style="font-size:13px; color:var(--gray-700); margin-bottom:12px; background:white; border-radius:6px; padding:8px 10px; font-weight:600;">100만원 투자 시 → <span style="color:var(--green);">1,141,800원</span> <span style="font-size:11px; color:var(--gray-400); font-weight:400;">(1년 기준)</span></div>
+
+        <div class="best-metrics" style="margin-bottom:12px;">
+          <div class="best-metric">
+            <div class="label">1년 수익률</div>
+            <div class="value positive">+14.18%</div>
+          </div>
+          <div class="best-metric">
+            <div class="label">3년 수익률</div>
+            <div class="value positive">+44.17%</div>
+          </div>
+          <div class="best-metric">
+            <div class="label">5년 수익률</div>
+            <div class="value positive">+46.04%</div>
+          </div>
+          <div class="best-metric">
+            <div class="label">총보수(TER)</div>
+            <div class="value">0.57%</div>
+          </div>
+          <div class="best-metric">
+            <div class="label">샤프비율</div>
+            <div class="value">1.86</div>
+          </div>
+          <div class="best-metric">
+            <div class="label">MDD</div>
+            <div class="value negative">-18.74%</div>
+          </div>
+        </div>
+
+        <div class="product-company">NH-Amundi운용 · ClassS-P · 펀드</div>
+
+        <div class="reason">
+          <div class="reason-label">추천 이유</div>
+          1년 14.18%, 3년 44.17%, 5년 46.04%가 확인되고 TER 0.5683% 수준이라 장기 성과와 비용 균형을 함께 볼 수 있습니다.
+        </div>
+      </div>
+
+      <!-- Product Cards Grid -->
+      <div class="section-title" style="margin-top:8px;">다른 상품 비교</div>
+      <div class="product-grid">
+        <!-- Card 1 -->
+        <div class="product-card">
+          <div class="card-header">
+            <div>
+              <span class="product-type type-fund">펀드</span>
+              <div class="product-name" style="margin-top:6px;">신한빠른대응TDF2030증권자투자신탁(H)</div>
+            </div>
+            <div class="rank-badge">2</div>
+          </div>
+          <div style="font-size:12px; color:var(--gray-500); margin-top:4px; line-height:1.4;">시장 변화에 빠르게 대응하는 전술적 자산배분형 TDF입니다.</div>
+          <div style="font-size:12px; color:var(--gray-700); margin-top:6px; font-weight:600;">100만원 투자 시 → <span style="color:var(--green);">1,219,240원</span></div>
+          <div class="card-metrics">
+            <div class="card-metric"><div class="label">1년</div><div class="value positive">+22.17%</div></div>
+            <div class="card-metric"><div class="label">TER</div><div class="value">0.92%</div></div>
+            <div class="card-metric"><div class="label">MDD</div><div class="value" style="color:var(--red);">-18.74%</div></div>
+          </div>
+          <div style="margin-top:8px; padding-top:8px; border-top:1px solid var(--gray-100);">
+            <div class="product-company">신한자산운용</div>
+            <div class="product-class">종류C-re · 일반</div>
+          </div>
+        </div>
+
+        <!-- Card 2 -->
+        <div class="product-card">
+          <div class="card-header">
+            <div>
+              <span class="product-type type-fund">펀드</span>
+              <div class="product-name" style="margin-top:6px;">한화LIFEPLUSTDF2030증권투자신탁</div>
+            </div>
+            <div class="rank-badge">3</div>
+          </div>
+          <div style="font-size:12px; color:var(--gray-500); margin-top:4px; line-height:1.4;">한화 LIFEPLUS 브랜드의 글로벌 자산배분형 TDF입니다.</div>
+          <div style="font-size:12px; color:var(--gray-700); margin-top:6px; font-weight:600;">100만원 투자 시 → <span style="color:var(--green);">1,154,523원</span></div>
+          <div class="card-metrics">
+            <div class="card-metric"><div class="label">1년</div><div class="value positive">+16.49%</div></div>
+            <div class="card-metric"><div class="label">TER</div><div class="value">0.68%</div></div>
+            <div class="card-metric"><div class="label">MDD</div><div class="value" style="color:var(--red);">-21.49%</div></div>
+          </div>
+          <div style="margin-top:8px; padding-top:8px; border-top:1px solid var(--gray-100);">
+            <div class="product-company">한화운용</div>
+            <div class="product-class">종류S · 일반</div>
+          </div>
+        </div>
+
+        <!-- Card 3 -->
+        <div class="product-card">
+          <div class="card-header">
+            <div>
+              <span class="product-type type-etf">ETF</span>
+              <div class="product-name" style="margin-top:6px;">KODEX TDF2030액티브</div>
+            </div>
+            <div class="rank-badge">4</div>
+          </div>
+          <div style="font-size:12px; color:var(--gray-500); margin-top:4px; line-height:1.4;">삼성운용의 TDF2030 액티브 운용 ETF입니다.</div>
+          <div style="font-size:12px; color:var(--gray-700); margin-top:6px; font-weight:600;">100만원 투자 시 → <span style="color:var(--green);">1,148,200원</span></div>
+          <div class="card-metrics">
+            <div class="card-metric"><div class="label">1년</div><div class="value positive">+14.82%</div></div>
+            <div class="card-metric"><div class="label">TER</div><div class="value">0.39%</div></div>
+            <div class="card-metric"><div class="label">MDD</div><div class="value" style="color:var(--red);">-10.55%</div></div>
+          </div>
+          <div style="margin-top:8px; padding-top:8px; border-top:1px solid var(--gray-100);">
+            <div class="product-company">삼성운용</div>
+            <div class="product-class">일반</div>
+          </div>
+        </div>
+
+        <!-- Card 4 -->
+        <div class="product-card">
+          <div class="card-header">
+            <div>
+              <span class="product-type type-fund">펀드</span>
+              <div class="product-name" style="margin-top:6px;">삼성한국형TDF2030증권투자신탁H</div>
+            </div>
+            <div class="rank-badge">5</div>
+          </div>
+          <div style="font-size:12px; color:var(--gray-500); margin-top:4px; line-height:1.4;">삼성운용의 한국형 글라이드패스 기반 TDF입니다.</div>
+          <div style="font-size:12px; color:var(--gray-700); margin-top:6px; font-weight:600;">100만원 투자 시 → <span style="color:var(--green);">1,139,400원</span></div>
+          <div class="card-metrics">
+            <div class="card-metric"><div class="label">1년</div><div class="value positive">+13.94%</div></div>
+            <div class="card-metric"><div class="label">TER</div><div class="value">0.78%</div></div>
+            <div class="card-metric"><div class="label">MDD</div><div class="value" style="color:var(--red);">-20.31%</div></div>
+          </div>
+          <div style="margin-top:8px; padding-top:8px; border-top:1px solid var(--gray-100);">
+            <div class="product-company">삼성운용</div>
+            <div class="product-class">S-P(연금저축) · 연금저축</div>
+          </div>
+        </div>
+
+        <!-- Card 5 -->
+        <div class="product-card">
+          <div class="card-header">
+            <div>
+              <span class="product-type type-fund">펀드</span>
+              <div class="product-name" style="margin-top:6px;">KB온국민TDF2030증권투자신탁</div>
+            </div>
+            <div class="rank-badge">6</div>
+          </div>
+          <div style="font-size:12px; color:var(--gray-500); margin-top:4px; line-height:1.4;">KB운용의 온국민 시리즈 TDF입니다.</div>
+          <div style="font-size:12px; color:var(--gray-700); margin-top:6px; font-weight:600;">100만원 투자 시 → <span style="color:var(--green);">1,128,500원</span></div>
+          <div class="card-metrics">
+            <div class="card-metric"><div class="label">1년</div><div class="value positive">+12.85%</div></div>
+            <div class="card-metric"><div class="label">TER</div><div class="value">0.33%</div></div>
+            <div class="card-metric"><div class="label">MDD</div><div class="value" style="color:var(--red);">-19.12%</div></div>
+          </div>
+          <div style="margin-top:8px; padding-top:8px; border-top:1px solid var(--gray-100);">
+            <div class="product-company">KB운용</div>
+            <div class="product-class">S-퇴직 · 퇴직연금</div>
+          </div>
+        </div>
+
+        <!-- Card 6 -->
+        <div class="product-card">
+          <div class="card-header">
+            <div>
+              <span class="product-type type-fund">펀드</span>
+              <div class="product-name" style="margin-top:6px;">미래에셋전략배분TDF2030증권투자신탁</div>
+            </div>
+            <div class="rank-badge">7</div>
+          </div>
+          <div style="font-size:12px; color:var(--gray-500); margin-top:4px; line-height:1.4;">미래에셋운용의 전략적 자산배분형 TDF입니다.</div>
+          <div style="font-size:12px; color:var(--gray-700); margin-top:6px; font-weight:600;">100만원 투자 시 → <span style="color:var(--green);">1,119,200원</span></div>
+          <div class="card-metrics">
+            <div class="card-metric"><div class="label">1년</div><div class="value positive">+11.92%</div></div>
+            <div class="card-metric"><div class="label">TER</div><div class="value">0.85%</div></div>
+            <div class="card-metric"><div class="label">MDD</div><div class="value" style="color:var(--red);">-22.10%</div></div>
+          </div>
+          <div style="margin-top:8px; padding-top:8px; border-top:1px solid var(--gray-100);">
+            <div class="product-company">미래에셋운용</div>
+            <div class="product-class">종류C-P(연금저축) · 연금저축</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="height:80px;"></div>
+</div>
+
+<!-- ==================== PAGE 3: VINTAGE DETAIL (List View) ==================== -->
+<div id="vintage-list" class="page">
+  <div class="screen-label">SCREEN 2-B — 빈티지 상세 (리스트 뷰)</div>
+  <div class="header" style="padding-bottom:16px;">
+    <div class="container">
+      <h1>TDF 2030</h1>
+      <p>은퇴 목표: 2030년 | 총 245개 상품</p>
+    </div>
+  </div>
+  <div class="section" style="padding-top:16px;">
+    <div class="container">
+      <div class="vintage-scroll">
+        <div class="vintage-chip">2015</div><div class="vintage-chip">2020</div><div class="vintage-chip">2025</div>
+        <div class="vintage-chip active">2030</div><div class="vintage-chip">2035</div><div class="vintage-chip">2040</div>
+        <div class="vintage-chip">2045</div><div class="vintage-chip">2050</div>
+      </div>
+      <div class="purpose-filter">
+        <button class="purpose-btn active">전체</button>
+        <button class="purpose-btn">일반</button>
+        <button class="purpose-btn">연금저축</button>
+        <button class="purpose-btn">퇴직연금</button>
+      </div>
+      <div class="sort-bar">
+        <div class="count">245개 상품</div>
+        <div style="display:flex; gap:8px; align-items:center;">
+          <select class="sort-select"><option>1년 수익률순</option></select>
+          <div class="view-toggle">
+            <button class="view-btn">카드</button>
+            <button class="view-btn active">리스트</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- BEST (compact) -->
+      <div style="background:linear-gradient(135deg, #FFFBEB, #FEF3C7); border:2px solid var(--gold); border-radius:var(--radius); padding:14px 16px; margin-bottom:12px; display:flex; align-items:center; gap:12px;">
+        <div class="best-badge" style="margin:0;">BEST</div>
+        <div style="flex:1; min-width:0;">
+          <div style="font-size:13px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">NH-Amundi하나로TDF2030증권투자신탁</div>
+          <div style="font-size:11px; color:var(--gray-500);">NH-Amundi운용 · ClassS-P</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:14px; font-weight:700; color:var(--green);">+14.18%</div>
+          <div style="font-size:10px; color:var(--gray-400);">1년 수익률</div>
+        </div>
+      </div>
+
+      <!-- List -->
+      <div class="product-list" style="border-radius:var(--radius); overflow:hidden; box-shadow:var(--shadow);">
+        <div class="list-item">
+          <div class="rank-badge">2</div>
+          <span class="product-type type-fund" style="font-size:10px; padding:2px 6px;">펀드</span>
+          <div class="list-info">
+            <div class="name">신한빠른대응TDF2030증권자투자신탁(H)</div>
+            <div class="company">신한자산운용 · 종류C-re · 일반</div>
+          </div>
+          <div class="list-returns">
+            <div class="value">+22.17%</div>
+            <div class="label">1년</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="rank-badge">3</div>
+          <span class="product-type type-fund" style="font-size:10px; padding:2px 6px;">펀드</span>
+          <div class="list-info">
+            <div class="name">한화LIFEPLUSTDF2030증권투자신탁</div>
+            <div class="company">한화운용 · 종류S · 일반</div>
+          </div>
+          <div class="list-returns">
+            <div class="value">+16.49%</div>
+            <div class="label">1년</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="rank-badge">4</div>
+          <span class="product-type type-etf" style="font-size:10px; padding:2px 6px;">ETF</span>
+          <div class="list-info">
+            <div class="name">KODEX TDF2030액티브</div>
+            <div class="company">삼성운용 · 일반</div>
+          </div>
+          <div class="list-returns">
+            <div class="value">+14.82%</div>
+            <div class="label">1년</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="rank-badge">5</div>
+          <span class="product-type type-fund" style="font-size:10px; padding:2px 6px;">펀드</span>
+          <div class="list-info">
+            <div class="name">삼성한국형TDF2030증권투자신탁H</div>
+            <div class="company">삼성운용 · S-P · 연금저축</div>
+          </div>
+          <div class="list-returns">
+            <div class="value">+13.94%</div>
+            <div class="label">1년</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="rank-badge">6</div>
+          <span class="product-type type-fund" style="font-size:10px; padding:2px 6px;">펀드</span>
+          <div class="list-info">
+            <div class="name">KB온국민TDF2030증권투자신탁</div>
+            <div class="company">KB운용 · S-퇴직 · 퇴직연금</div>
+          </div>
+          <div class="list-returns">
+            <div class="value">+12.85%</div>
+            <div class="label">1년</div>
+          </div>
+        </div>
+        <div class="list-item">
+          <div class="rank-badge">7</div>
+          <span class="product-type type-fund" style="font-size:10px; padding:2px 6px;">펀드</span>
+          <div class="list-info">
+            <div class="name">미래에셋전략배분TDF2030증권투자신탁</div>
+            <div class="company">미래에셋운용 · C-P · 연금저축</div>
+          </div>
+          <div class="list-returns">
+            <div class="value">+11.92%</div>
+            <div class="label">1년</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div style="height:80px;"></div>
+</div>
+
+<!-- ==================== PAGE 4: PRODUCT DETAIL ==================== -->
+<div id="detail" class="page">
+  <div class="screen-label">SCREEN 3 — 상품 상세 (모달 형태)</div>
+  <div style="background:var(--gray-200); min-height:100vh; padding-top:70px;">
+    <div style="max-width:600px; margin:40px auto; background:white; border-radius:20px; padding:24px 20px 40px; box-shadow:var(--shadow-lg);">
+      <div class="modal-handle"></div>
+
+      <div style="display:flex; gap:8px; margin-bottom:16px;">
+        <span class="product-type type-fund">펀드</span>
+        <span style="padding:2px 8px; border-radius:4px; font-size:11px; font-weight:600; background:#DBEAFE; color:#2563EB;">퇴직연금</span>
+      </div>
+
+      <div style="font-size:18px; font-weight:700; margin-bottom:4px;">NH-Amundi하나로TDF2030증권투자신탁[주식혼합-재간접형]</div>
+      <div style="font-size:14px; color:var(--gray-500); margin-bottom:20px;">NH-Amundi운용 · ClassS-P</div>
+
+      <div style="margin-bottom:20px;">
+        <div style="font-size:14px; font-weight:600; margin-bottom:8px; color:var(--gray-700);">한줄 설명</div>
+        <p style="font-size:13px; color:var(--gray-600); background:var(--gray-50); border-radius:8px; padding:14px;">시장 변화에 빠르게 대응하는 전술적 자산배분형 TDF입니다.</p>
+      </div>
+
+      <div style="background:var(--primary-light); border-radius:8px; padding:14px; margin-bottom:20px; display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-size:12px; color:var(--gray-500);">100만원 투자 시 (1년 기준)</div>
+          <div style="font-size:22px; font-weight:700; color:var(--primary);">1,141,800원</div>
+        </div>
+        <div style="font-size:13px; color:var(--green); font-weight:600;">+14.18%</div>
+      </div>
+
+      <div style="font-size:14px; font-weight:600; margin-bottom:12px; color:var(--gray-700);">수익률</div>
+      <div class="detail-grid">
+        <div class="detail-item">
+          <div class="label">6개월</div>
+          <div class="value" style="color:var(--green);">+10.52%</div>
+        </div>
+        <div class="detail-item">
+          <div class="label">1년</div>
+          <div class="value" style="color:var(--green);">+14.18%</div>
+        </div>
+        <div class="detail-item">
+          <div class="label">3년</div>
+          <div class="value" style="color:var(--green);">+44.17%</div>
+        </div>
+        <div class="detail-item">
+          <div class="label">5년</div>
+          <div class="value" style="color:var(--green);">+46.04%</div>
+        </div>
+        <div class="detail-item">
+          <div class="label">설정이후</div>
+          <div class="value" style="color:var(--green);">+52.09%</div>
+        </div>
+      </div>
+
+      <div style="font-size:14px; font-weight:600; margin-bottom:12px; color:var(--gray-700);">비용</div>
+      <div class="detail-grid" style="grid-template-columns: repeat(2,1fr);">
+        <div class="detail-item">
+          <div class="label">총보수</div>
+          <div class="value">0.365%</div>
+        </div>
+        <div class="detail-item">
+          <div class="label">합성총보수(TER)</div>
+          <div class="value">0.5683%</div>
+        </div>
+      </div>
+
+      <div style="font-size:14px; font-weight:600; margin-bottom:12px; color:var(--gray-700);">위험 지표</div>
+      <div class="detail-grid">
+        <div class="detail-item">
+          <div class="label">
+            <span>샤프비율</span>
+            <span class="tooltip-wrap">
+              <span class="tooltip-icon" tabindex="0">?</span>
+              <span class="tooltip-content">위험 대비 초과수익률을 측정합니다. 값이 높을수록 같은 위험에서 더 많은 수익을 낸다는 의미로, 1 이상이면 양호합니다.</span>
+            </span>
+          </div>
+          <div class="value">1.86</div>
+        </div>
+        <div class="detail-item">
+          <div class="label">
+            <span>소르티노비율</span>
+            <span class="tooltip-wrap">
+              <span class="tooltip-icon" tabindex="0">?</span>
+              <span class="tooltip-content">하락 위험만을 고려한 수익률 지표입니다. 샤프비율과 달리 하락 변동성만 반영하므로, 값이 높을수록 손실 위험 대비 수익이 좋습니다.</span>
+            </span>
+          </div>
+          <div class="value">1.66</div>
+        </div>
+        <div class="detail-item">
+          <div class="label">
+            <span>변동성(표준편차)</span>
+            <span class="tooltip-wrap">
+              <span class="tooltip-icon" tabindex="0">?</span>
+              <span class="tooltip-content">수익률이 평균에서 얼마나 벗어나는지를 나타냅니다. 값이 낮을수록 가격이 안정적이며, 높을수록 등락이 큰 상품입니다.</span>
+            </span>
+          </div>
+          <div class="value">12.77%</div>
+        </div>
+        <div class="detail-item">
+          <div class="label">
+            <span>MDD</span>
+            <span class="tooltip-wrap">
+              <span class="tooltip-icon" tabindex="0">?</span>
+              <span class="tooltip-content">최대 낙폭(Maximum Drawdown)으로 고점 대비 최대 하락 폭입니다. 값이 작을수록(0에 가까울수록) 최악의 상황에서도 손실이 적은 상품입니다.</span>
+            </span>
+          </div>
+          <div class="value" style="color:var(--red);">-18.74%</div>
+        </div>
+        <div class="detail-item">
+          <div class="label">
+            <span>회복기간</span>
+            <span class="tooltip-wrap">
+              <span class="tooltip-icon" tabindex="0">?</span>
+              <span class="tooltip-content">MDD 발생 후 이전 고점을 다시 회복하는 데 걸린 영업일 수입니다. 짧을수록 빠르게 회복하는 상품입니다.</span>
+            </span>
+          </div>
+          <div class="value">390일</div>
+        </div>
+      </div>
+
+      <div style="font-size:14px; font-weight:600; margin-bottom:12px; color:var(--gray-700);">자산 배분</div>
+      <div style="display:flex; gap:8px; margin-bottom:20px;">
+        <div style="flex:52.19; height:28px; background:#3B82F6; border-radius:4px 0 0 4px; display:flex; align-items:center; justify-content:center; color:white; font-size:11px; font-weight:600;">주식 52.2%</div>
+        <div style="flex:44.45; height:28px; background:#10B981; display:flex; align-items:center; justify-content:center; color:white; font-size:11px; font-weight:600;">채권 44.5%</div>
+        <div style="flex:3.36; height:28px; background:#F59E0B; border-radius:0 4px 4px 0; display:flex; align-items:center; justify-content:center; color:white; font-size:10px; font-weight:600;">3.4%</div>
+      </div>
+
+      <div style="font-size:14px; font-weight:600; margin-bottom:12px; color:var(--gray-700);">기타 정보</div>
+      <div style="background:var(--gray-50); border-radius:8px; padding:14px; font-size:13px; color:var(--gray-600);">
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <span>설정일</span><span style="font-weight:600;">2020.06.10</span>
+        </div>
+        <div style="display:flex; justify-content:space-between; margin-bottom:8px;">
+          <span>설정액</span><span style="font-weight:600;">계열 895.46억원</span>
+        </div>
+        <div style="display:flex; justify-content:space-between;">
+          <span>환매조건</span><span style="font-weight:600;">T+3 기준가 / T+4 환매일</span>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ==================== PAGE 5: STATS ==================== -->
+<div id="stats" class="page">
+  <div class="screen-label">SCREEN 4 — 조회 통계 대시보드</div>
+  <div class="header">
+    <div class="container">
+      <h1>조회 통계</h1>
+      <p>사용자들이 어떤 상품에 관심을 갖고 있는지 확인하세요</p>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="container">
+      <!-- Summary Cards -->
+      <div class="stat-row">
+        <div class="stat-card">
+          <h3>총 조회수</h3>
+          <div class="big-number">12,847</div>
+          <div style="font-size:12px; color:var(--green); margin-top:4px;">+23.5% vs 지난주</div>
+        </div>
+        <div class="stat-card">
+          <h3>오늘 조회수</h3>
+          <div class="big-number">482</div>
+          <div style="font-size:12px; color:var(--green); margin-top:4px;">+12.1% vs 어제</div>
+        </div>
+        <div class="stat-card">
+          <h3>고유 방문자</h3>
+          <div class="big-number">3,291</div>
+          <div style="font-size:12px; color:var(--gray-400); margin-top:4px;">최근 30일</div>
+        </div>
+      </div>
+
+      <!-- Vintage Bar Chart -->
+      <div class="stat-card">
+        <h3 style="font-size:16px; font-weight:600; color:var(--gray-800); margin-bottom:16px;">빈티지별 조회수</h3>
+        <div class="bar-chart">
+          <div class="bar-row"><div class="bar-label">TDF2025</div><div class="bar-track"><div class="bar-fill blue" style="width:45%;">1,245</div></div><div class="bar-value">1,245</div></div>
+          <div class="bar-row"><div class="bar-label">TDF2030</div><div class="bar-track"><div class="bar-fill blue" style="width:100%;">2,831</div></div><div class="bar-value">2,831</div></div>
+          <div class="bar-row"><div class="bar-label">TDF2035</div><div class="bar-track"><div class="bar-fill blue" style="width:72%;">2,045</div></div><div class="bar-value">2,045</div></div>
+          <div class="bar-row"><div class="bar-label">TDF2040</div><div class="bar-track"><div class="bar-fill blue" style="width:60%;">1,698</div></div><div class="bar-value">1,698</div></div>
+          <div class="bar-row"><div class="bar-label">TDF2045</div><div class="bar-track"><div class="bar-fill blue" style="width:52%;">1,482</div></div><div class="bar-value">1,482</div></div>
+          <div class="bar-row"><div class="bar-label">TDF2050</div><div class="bar-track"><div class="bar-fill blue" style="width:48%;">1,356</div></div><div class="bar-value">1,356</div></div>
+          <div class="bar-row"><div class="bar-label">TDF2055</div><div class="bar-track"><div class="bar-fill blue" style="width:30%;">856</div></div><div class="bar-value">856</div></div>
+          <div class="bar-row"><div class="bar-label">TDF2060</div><div class="bar-track"><div class="bar-fill blue" style="width:25%;">712</div></div><div class="bar-value">712</div></div>
+          <div class="bar-row"><div class="bar-label">TDF2020</div><div class="bar-track"><div class="bar-fill blue" style="width:15%;">421</div></div><div class="bar-value">421</div></div>
+          <div class="bar-row"><div class="bar-label">TDF2065</div><div class="bar-track"><div class="bar-fill blue" style="width:5%;">121</div></div><div class="bar-value">121</div></div>
+          <div class="bar-row"><div class="bar-label">TDF2015</div><div class="bar-track"><div class="bar-fill blue" style="width:3%;">80</div></div><div class="bar-value">80</div></div>
+        </div>
+      </div>
+
+      <!-- ETF vs Fund -->
+      <div style="display:grid; grid-template-columns: 1fr 1fr; gap:16px;">
+        <div class="stat-card">
+          <h3 style="font-size:16px; font-weight:600; color:var(--gray-800); margin-bottom:16px;">ETF vs 펀드 조회 비율</h3>
+          <div class="donut-chart"></div>
+          <div class="donut-legend">
+            <span><span class="legend-dot" style="background:var(--primary);"></span>펀드 45%</span>
+            <span><span class="legend-dot" style="background:#60A5FA;"></span>ETF 27%</span>
+            <span><span class="legend-dot" style="background:var(--gold);"></span>BEST 28%</span>
+          </div>
+        </div>
+
+        <div class="stat-card">
+          <h3 style="font-size:16px; font-weight:600; color:var(--gray-800); margin-bottom:16px;">목적별 조회 비율</h3>
+          <div class="bar-chart" style="margin-top:20px;">
+            <div class="bar-row"><div class="bar-label">일반</div><div class="bar-track"><div class="bar-fill blue" style="width:35%;">35%</div></div></div>
+            <div class="bar-row"><div class="bar-label">연금저축</div><div class="bar-track"><div class="bar-fill green" style="width:38%;">38%</div></div></div>
+            <div class="bar-row"><div class="bar-label">퇴직연금</div><div class="bar-track"><div class="bar-fill gold" style="width:27%;">27%</div></div></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Products -->
+      <div class="stat-card" style="margin-top:16px;">
+        <h3 style="font-size:16px; font-weight:600; color:var(--gray-800); margin-bottom:16px;">가장 많이 조회된 상품 TOP 10</h3>
+        <table class="stat-table">
+          <thead>
+            <tr>
+              <th>순위</th>
+              <th>상품명</th>
+              <th>빈티지</th>
+              <th>유형</th>
+              <th>조회수</th>
+              <th>추이</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><strong>1</strong></td>
+              <td>NH-Amundi하나로TDF2030</td>
+              <td>2030</td>
+              <td><span class="product-type type-fund" style="font-size:10px;">펀드</span></td>
+              <td><strong>892</strong></td>
+              <td class="trend-up">+15%</td>
+            </tr>
+            <tr>
+              <td><strong>2</strong></td>
+              <td>삼성한국형TDF2050UH</td>
+              <td>2050</td>
+              <td><span class="product-type type-fund" style="font-size:10px;">펀드</span></td>
+              <td><strong>756</strong></td>
+              <td class="trend-up">+8%</td>
+            </tr>
+            <tr>
+              <td><strong>3</strong></td>
+              <td>KODEX TDF2030액티브</td>
+              <td>2030</td>
+              <td><span class="product-type type-etf" style="font-size:10px;">ETF</span></td>
+              <td><strong>623</strong></td>
+              <td class="trend-up">+22%</td>
+            </tr>
+            <tr>
+              <td><strong>4</strong></td>
+              <td>KB온국민TDF2035</td>
+              <td>2035</td>
+              <td><span class="product-type type-fund" style="font-size:10px;">펀드</span></td>
+              <td><strong>589</strong></td>
+              <td class="trend-down">-3%</td>
+            </tr>
+            <tr>
+              <td><strong>5</strong></td>
+              <td>한화LIFEPLUSTDF2045</td>
+              <td>2045</td>
+              <td><span class="product-type type-fund" style="font-size:10px;">펀드</span></td>
+              <td><strong>534</strong></td>
+              <td class="trend-up">+5%</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <div style="height:80px;"></div>
+</div>
+
+<!-- ==================== PAGE 6: MOBILE PREVIEW ==================== -->
+<div id="mobile" class="page">
+  <div class="screen-label">모바일 미리보기 (375px 시뮬레이션)</div>
+  <div style="display:flex; justify-content:center; padding:40px 20px 100px;">
+    <div style="width:375px; border:8px solid #1F2937; border-radius:40px; overflow:hidden; box-shadow:0 25px 50px rgba(0,0,0,0.25); background:white;">
+      <!-- Status bar -->
+      <div style="background:#1F2937; padding:8px 24px; display:flex; justify-content:space-between; font-size:12px; color:white; font-weight:600;">
+        <span>9:41</span>
+        <span>100%</span>
+      </div>
+
+      <div style="height:700px; overflow-y:auto;">
+        <!-- Mobile Header -->
+        <div style="background:linear-gradient(135deg, #1E40AF, #3B82F6); color:white; padding:20px 16px;">
+          <div style="font-size:20px; font-weight:700;">TDF 비교</div>
+          <div style="font-size:12px; opacity:0.8;">나에게 맞는 TDF 상품을 찾아보세요</div>
+        </div>
+
+        <div style="padding:16px;">
+          <div style="font-size:15px; font-weight:700; margin-bottom:12px;">TDF 2030</div>
+
+          <!-- Vintage pills -->
+          <div style="display:flex; gap:6px; overflow-x:auto; margin-bottom:12px; padding-bottom:4px;">
+            <span style="padding:6px 12px; border-radius:16px; font-size:11px; border:1px solid #D1D5DB; white-space:nowrap;">2025</span>
+            <span style="padding:6px 12px; border-radius:16px; font-size:11px; background:#2563EB; color:white; white-space:nowrap; font-weight:600;">2030</span>
+            <span style="padding:6px 12px; border-radius:16px; font-size:11px; border:1px solid #D1D5DB; white-space:nowrap;">2035</span>
+            <span style="padding:6px 12px; border-radius:16px; font-size:11px; border:1px solid #D1D5DB; white-space:nowrap;">2040</span>
+            <span style="padding:6px 12px; border-radius:16px; font-size:11px; border:1px solid #D1D5DB; white-space:nowrap;">2045</span>
+          </div>
+
+          <!-- Purpose pills -->
+          <div style="display:flex; gap:6px; margin-bottom:12px;">
+            <span style="padding:5px 10px; border-radius:12px; font-size:10px; background:#2563EB; color:white; font-weight:600;">전체</span>
+            <span style="padding:5px 10px; border-radius:12px; font-size:10px; border:1px solid #D1D5DB;">일반</span>
+            <span style="padding:5px 10px; border-radius:12px; font-size:10px; border:1px solid #D1D5DB;">연금저축</span>
+            <span style="padding:5px 10px; border-radius:12px; font-size:10px; border:1px solid #D1D5DB;">퇴직연금</span>
+          </div>
+
+          <!-- Mobile Best Card -->
+          <div style="background:linear-gradient(135deg, #FFFBEB, #FEF3C7); border:2px solid #F59E0B; border-radius:12px; padding:14px; margin-bottom:12px;">
+            <div style="display:inline-flex; align-items:center; gap:4px; background:#F59E0B; color:white; padding:3px 10px; border-radius:12px; font-size:10px; font-weight:700; margin-bottom:8px;">BEST</div>
+            <div style="font-size:13px; font-weight:700; margin-bottom:2px;">NH-Amundi하나로TDF2030</div>
+            <div style="font-size:11px; color:#6B7280; margin-bottom:8px;">NH-Amundi운용</div>
+            <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:6px;">
+              <div style="background:white; border-radius:6px; padding:8px; text-align:center;">
+                <div style="font-size:9px; color:#9CA3AF;">1년</div>
+                <div style="font-size:13px; font-weight:700; color:#10B981;">+14.18%</div>
+              </div>
+              <div style="background:white; border-radius:6px; padding:8px; text-align:center;">
+                <div style="font-size:9px; color:#9CA3AF;">TER</div>
+                <div style="font-size:13px; font-weight:700;">0.57%</div>
+              </div>
+              <div style="background:white; border-radius:6px; padding:8px; text-align:center;">
+                <div style="font-size:9px; color:#9CA3AF;">MDD</div>
+                <div style="font-size:13px; font-weight:700; color:#EF4444;">-18.7%</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Mobile List Items -->
+          <div style="background:white; border-radius:12px; overflow:hidden; box-shadow:0 1px 3px rgba(0,0,0,0.1);">
+            <div style="padding:12px; display:flex; align-items:center; gap:10px; border-bottom:1px solid #F3F4F6;">
+              <div style="width:20px; height:20px; border-radius:50%; background:#F3F4F6; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#6B7280;">2</div>
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">신한빠른대응TDF2030</div>
+                <div style="font-size:10px; color:#9CA3AF;">신한자산운용</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:13px; font-weight:700; color:#10B981;">+22.17%</div>
+                <div style="font-size:9px; color:#9CA3AF;">1년</div>
+              </div>
+            </div>
+            <div style="padding:12px; display:flex; align-items:center; gap:10px; border-bottom:1px solid #F3F4F6;">
+              <div style="width:20px; height:20px; border-radius:50%; background:#F3F4F6; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#6B7280;">3</div>
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">한화LIFEPLUSTDF2030</div>
+                <div style="font-size:10px; color:#9CA3AF;">한화운용</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:13px; font-weight:700; color:#10B981;">+16.49%</div>
+                <div style="font-size:9px; color:#9CA3AF;">1년</div>
+              </div>
+            </div>
+            <div style="padding:12px; display:flex; align-items:center; gap:10px;">
+              <div style="width:20px; height:20px; border-radius:50%; background:#F3F4F6; display:flex; align-items:center; justify-content:center; font-size:10px; font-weight:700; color:#6B7280;">4</div>
+              <div style="flex:1; min-width:0;">
+                <div style="font-size:12px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">KODEX TDF2030액티브</div>
+                <div style="font-size:10px; color:#9CA3AF;">삼성운용 · ETF</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:13px; font-weight:700; color:#10B981;">+14.82%</div>
+                <div style="font-size:9px; color:#9CA3AF;">1년</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Bottom Nav -->
+      <div style="background:white; border-top:1px solid #E5E7EB; display:flex; padding:8px 0 20px;">
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; color:#2563EB;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>
+          <span style="font-size:9px; font-weight:600;">홈</span>
+        </div>
+        <div style="flex:1; display:flex; flex-direction:column; align-items:center; gap:2px; color:#9CA3AF;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>
+          <span style="font-size:9px; font-weight:500;">통계</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Bottom Nav (decorative) -->
+<div class="bottom-nav" id="bottomNav">
+  <div class="nav-item active">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <span>홈</span>
+  </div>
+  <div class="nav-item">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></svg>
+    <span>통계</span>
+  </div>
+</div>
+
+<script>
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.page-nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
+  window.scrollTo(0, 0);
+}
+</script>
+
+</body>
+</html>
