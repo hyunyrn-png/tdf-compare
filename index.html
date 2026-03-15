@@ -396,8 +396,12 @@ function renderVintageDetail() {
 
 function renderPurposeFilter() {
   const products = DATA.vintages[currentVintage].products;
+  const etfCount = products.filter(p => p.type === 'ETF').length;
   const counts = { '전체': products.length, '일반': 0, '연금저축': 0, '퇴직연금': 0 };
   products.forEach(p => { if (counts[p.purpose] !== undefined) counts[p.purpose]++; });
+  // ETF는 모든 카테고리에서 조회 가능
+  counts['연금저축'] += etfCount;
+  counts['퇴직연금'] += etfCount;
 
   const filter = document.getElementById('purpose-filter');
   filter.innerHTML = Object.entries(counts).map(([k, c]) => `
@@ -441,7 +445,7 @@ function sortProducts(products) {
 
 function getFilteredProducts() {
   let products = DATA.vintages[currentVintage].products.slice();
-  if (currentPurpose !== '전체') products = products.filter(p => p.purpose === currentPurpose);
+  if (currentPurpose !== '전체') products = products.filter(p => p.purpose === currentPurpose || p.type === 'ETF');
   sortProducts(products);
   return products;
 }
